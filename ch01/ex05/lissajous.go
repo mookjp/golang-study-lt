@@ -20,11 +20,11 @@ import (
 
 //!+main
 
-var palette = []color.Color{color.White, color.Black}
+var palette = []color.Color{color.Black, color.RGBA{0x00, 0xff, 0x00, 0xff}}
 
 const (
-	whiteIndex = 0 // first color in palette
-	blackIndex = 1 // next color in palette
+	backGroundColorIndex = 0
+	lineColorIndex       = 1
 )
 
 func main() {
@@ -68,13 +68,16 @@ func lissajous(out io.Writer) {
 		// Pt is shorthand for Point{X, Y}.
 		// A Point is an X, Y coordinate pair. The axes increase right and down.
 		rect := image.Rect(0, 0, 2*size+1, 2*size+1)
+		// p.17
+		// > すべての画素は最初にパレットのゼロ値（パレットの0番目の色）に設定され…（略）
+		// TODO: どこのドキュメントに書いてある？
 		img := image.NewPaletted(rect, palette)
 		// imgの特定座標の色をセットする
 		for t := 0.0; t < cycles*2*math.Pi; t += res {
 			x := math.Sin(t)
 			y := math.Sin(t*freq + phase)
 			img.SetColorIndex(size+int(x*size+0.5), size+int(y*size+0.5),
-				blackIndex)
+				lineColorIndex)
 		}
 		phase += 0.1
 		anim.Delay = append(anim.Delay, delay)
