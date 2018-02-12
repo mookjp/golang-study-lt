@@ -19,7 +19,7 @@ var palette = []color.Color{
 	color.RGBA{0x00, 0xff, 0x00, 0xff},
 	color.RGBA{0xff, 0x00, 0x00, 0xff}}
 
-var parameterErrorMessage = "Parameter Error: %v=%v"
+var parameterErrorMessage = "Parameter Error: %v / %v=%v"
 
 const (
 	backGroundColorIndex = 0
@@ -47,59 +47,65 @@ func main() {
 		}
 		for queryKey, queryVals := range r.URL.Query() {
 			fmt.Fprintf(os.Stdout, "query: %s=%s\n", queryKey, queryVals)
-			fmt.Fprintf(w, "query: %s=%s\n", queryKey, queryVals)
 
 			// TODO: commonize
 			switch queryKey {
 			case "cycles":
 				converted, err := strconv.Atoi(queryVals[0])
 				if err != nil {
-					params.cycles = converted
-				} else {
 					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					return
+				} else {
+					params.cycles = converted
 				}
 			case "res":
-				converted, err := strconv.ParseFloat(queryVals[0])
+				converted, err := strconv.ParseFloat(queryVals[0], 64)
 				if err != nil {
-					params.res = converted
-				} else {
 					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					return
+				} else {
+					params.res = converted
 				}
 			case "size":
 				converted, err := strconv.Atoi(queryVals[0])
 				if err != nil {
-					params.size = converted
-				} else {
 					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					return
+				} else {
+					params.size = converted
 				}
 			case "nframes":
 				converted, err := strconv.Atoi(queryVals[0])
 				if err != nil {
-					params.nframes = converted
-				} else {
 					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					return
+				} else {
+					params.nframes = converted
 				}
 			case "delay":
 				converted, err := strconv.Atoi(queryVals[0])
 				if err != nil {
-					params.delay = converted
-				} else {
 					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					return
+				} else {
+					params.delay = converted
 				}
 			}
 		}
-		lissajous(w, &params)
+		lissajous(w, params)
 	})
 	log.Fatal(http.ListenAndServe("localhost:8000", nil))
 }
 
 // TODO: package
-func lissajous(out io.Writer, params *lissajousParams) {
+func lissajous(out io.Writer, params lissajousParams) {
+	fmt.Fprintf(os.Stdout, "lissajous params: %v\n", params)
+
 	freq := rand.Float64() * 3.0 // relative frequency of y oscillator
 	anim := gif.GIF{LoopCount: params.nframes}
 	phase := 0.0 // phase difference
@@ -117,22 +123,25 @@ func lissajous(out io.Writer, params *lissajousParams) {
 		// TODO: どこのドキュメントに書いてある？
 		img := image.NewPaletted(rect, palette)
 		// imgの特定座標の色をセットする
-		for t := 0.0; t < params.cycles*2.0*math.Pi; t += params.res {
+		for t := 0.0; t < float64(params.cycles)*2.0*math.Pi; t += params.res {
 			x := math.Sin(t)
 			y := math.Sin(t*freq + phase)
 
 			var colorIndex uint8
-			if t > params.cycles {
+			if t > float64(params.cycles) {
 				colorIndex = firstLineColorIndex
 			} else {
 				colorIndex = secondLineColorIndex
 			}
-			img.SetColorIndex(params.size + int(x*params.size+0.5), params.size + int(y*params.size+0.5),
+			img.SetColorIndex(params.size + int(x*float64(params.size)+0.5), params.size + int(y*float64(params.size)+0.5),
 				colorIndex)
 		}
 		phase += 0.1
 		anim.Delay = append(anim.Delay, params.delay)
 		anim.Image = append(anim.Image, img)
 	}
-	gif.EncodeAll(out, &anim) // NOTE: ignoring encoding errors
+	encodeErr := gif.EncodeAll(out, &anim) // NOTE: ignoring encoding errors
+	if encodeErr != nil {
+		fmt.Fprintf(os.Stdout, "encode error: %v", encodeErr)
+	}
 }
