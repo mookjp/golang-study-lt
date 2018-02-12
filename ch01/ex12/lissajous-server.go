@@ -22,7 +22,7 @@ var palette = []color.Color{
 var parameterErrorMessage = "Parameter Error: %v / %v=%v"
 
 const (
-	backGroundColorIndex = 0
+	//backGroundColorIndex = 0
 	firstLineColorIndex  = 1
 	secondLineColorIndex  = 2
 )
@@ -53,8 +53,7 @@ func main() {
 			case "cycles":
 				converted, err := strconv.Atoi(queryVals[0])
 				if err != nil {
-					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					handleError(w, err, queryKey, queryVals)
 					return
 				} else {
 					params.cycles = converted
@@ -62,8 +61,7 @@ func main() {
 			case "res":
 				converted, err := strconv.ParseFloat(queryVals[0], 64)
 				if err != nil {
-					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					handleError(w, err, queryKey, queryVals)
 					return
 				} else {
 					params.res = converted
@@ -71,8 +69,7 @@ func main() {
 			case "size":
 				converted, err := strconv.Atoi(queryVals[0])
 				if err != nil {
-					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					handleError(w, err, queryKey, queryVals)
 					return
 				} else {
 					params.size = converted
@@ -80,8 +77,7 @@ func main() {
 			case "nframes":
 				converted, err := strconv.Atoi(queryVals[0])
 				if err != nil {
-					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					handleError(w, err, queryKey, queryVals)
 					return
 				} else {
 					params.nframes = converted
@@ -89,8 +85,7 @@ func main() {
 			case "delay":
 				converted, err := strconv.Atoi(queryVals[0])
 				if err != nil {
-					w.WriteHeader(400)
-					fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+					handleError(w, err, queryKey, queryVals)
 					return
 				} else {
 					params.delay = converted
@@ -100,6 +95,12 @@ func main() {
 		lissajous(w, params)
 	})
 	log.Fatal(http.ListenAndServe("localhost:8000", nil))
+}
+
+func handleError(w http.ResponseWriter, err error, queryKey string, queryVals []string) {
+	w.WriteHeader(400)
+	fmt.Fprintf(w, parameterErrorMessage, err, queryKey, queryVals)
+	return
 }
 
 // TODO: package
