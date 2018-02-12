@@ -9,6 +9,9 @@ import (
 	"math"
 	"image/color"
 	"math/rand"
+	"fmt"
+	"os"
+	"strconv"
 )
 
 var palette = []color.Color{
@@ -16,60 +19,119 @@ var palette = []color.Color{
 	color.RGBA{0x00, 0xff, 0x00, 0xff},
 	color.RGBA{0xff, 0x00, 0x00, 0xff}}
 
+var parameterErrorMessage = "Parameter Error: %v=%v"
+
 const (
 	backGroundColorIndex = 0
 	firstLineColorIndex  = 1
 	secondLineColorIndex  = 2
 )
 
+type lissajousParams struct {
+	cycles  int // number of complete x oscillator revolutions
+	res     float64 // angular resolution
+	size    int // image canvas covers [-size..+size]
+	nframes int // number of animation frames
+	delay   int // delay between frames in 10ms units
+}
+
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		lissajous(w)
+		// default
+		params := lissajousParams{
+			cycles: 5,
+			res: 0.001,
+			size: 100,
+			nframes: 64,
+			delay: 8,
+		}
+		for queryKey, queryVals := range r.URL.Query() {
+			fmt.Fprintf(os.Stdout, "query: %s=%s\n", queryKey, queryVals)
+			fmt.Fprintf(w, "query: %s=%s\n", queryKey, queryVals)
+
+			// TODO: commonize
+			switch queryKey {
+			case "cycles":
+				converted, err := strconv.Atoi(queryVals[0])
+				if err != nil {
+					params.cycles = converted
+				} else {
+					w.WriteHeader(400)
+					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+				}
+			case "res":
+				converted, err := strconv.ParseFloat(queryVals[0])
+				if err != nil {
+					params.res = converted
+				} else {
+					w.WriteHeader(400)
+					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+				}
+			case "size":
+				converted, err := strconv.Atoi(queryVals[0])
+				if err != nil {
+					params.size = converted
+				} else {
+					w.WriteHeader(400)
+					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+				}
+			case "nframes":
+				converted, err := strconv.Atoi(queryVals[0])
+				if err != nil {
+					params.nframes = converted
+				} else {
+					w.WriteHeader(400)
+					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+				}
+			case "delay":
+				converted, err := strconv.Atoi(queryVals[0])
+				if err != nil {
+					params.delay = converted
+				} else {
+					w.WriteHeader(400)
+					fmt.Fprintf(w, parameterErrorMessage, queryKey, queryVals)
+				}
+			}
+		}
+		lissajous(w, &params)
 	})
 	log.Fatal(http.ListenAndServe("localhost:8000", nil))
 }
 
 // TODO: package
-func lissajous(out io.Writer) {
-	const (
-		cycles  = 5     // number of complete x oscillator revolutions
-		res     = 0.001 // angular resolution
-		size    = 100   // image canvas covers [-size..+size]
-		nframes = 64    // number of animation frames
-		delay   = 8     // delay between frames in 10ms units
-	)
+func lissajous(out io.Writer, params *lissajousParams) {
 	freq := rand.Float64() * 3.0 // relative frequency of y oscillator
-	anim := gif.GIF{LoopCount: nframes}
+	anim := gif.GIF{LoopCount: params.nframes}
 	phase := 0.0 // phase difference
 
 	// アニメーションの1フレームを作成
 	// 64フレーム分を外側のループで作成
 	// 1フレームのimgのどこに色を置くかを、内側のループで作成
-	for i := 0; i < nframes; i++ {
+	for i := 0; i < params.nframes; i++ {
 		// Rect is shorthand for Rectangle{Pt(x0, y0), Pt(x1, y1)}
 		// Pt is shorthand for Point{X, Y}.
 		// A Point is an X, Y coordinate pair. The axes increase right and down.
-		rect := image.Rect(0, 0, 2*size+1, 2*size+1)
+		rect := image.Rect(0, 0, 2*params.size+1, 2*params.size+1)
 		// p.17
 		// > すべての画素は最初にパレットのゼロ値（パレットの0番目の色）に設定され…（略）
 		// TODO: どこのドキュメントに書いてある？
 		img := image.NewPaletted(rect, palette)
 		// imgの特定座標の色をセットする
-		for t := 0.0; t < cycles*2*math.Pi; t += res {
+		for t := 0.0; t < params.cycles*2.0*math.Pi; t += params.res {
 			x := math.Sin(t)
 			y := math.Sin(t*freq + phase)
 
 			var colorIndex uint8
-			if t > cycles {
+			if t > params.cycles {
 				colorIndex = firstLineColorIndex
 			} else {
 				colorIndex = secondLineColorIndex
 			}
-			img.SetColorIndex(size+int(x*size+0.5), size+int(y*size+0.5),
+			img.SetColorIndex(params.size + int(x*params.size+0.5), params.size + int(y*params.size+0.5),
 				colorIndex)
 		}
 		phase += 0.1
-		anim.Delay = append(anim.Delay, delay)
+		anim.Delay = append(anim.Delay, params.delay)
 		anim.Image = append(anim.Image, img)
 	}
 	gif.EncodeAll(out, &anim) // NOTE: ignoring encoding errors
