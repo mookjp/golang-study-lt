@@ -22,5 +22,5 @@ func FToK(f Fahrenheit) KelvinScale {
 }
 
 func KToC(k KelvinScale) Celsius {
-	return Celsius(float64(-k) * float64(AbsoluteZeroC))
+	return Celsius(float64(-k + 1) * float64(AbsoluteZeroC))
 }
