@@ -5,7 +5,22 @@ var pc [256]byte
 
 func init() {
 	for i := range pc {
-		pc[i] = pc[i/2] + byte(i&1) // TODO i&1とは…
+		// i = 1のとき
+		// pc[1/2] -> pc[0]
+		// byte(1&1) -> byte(1)
+		// pc[1] = pc[0] + byte(1) -> 0 + 1 = 1
+
+		// i = 2のとき
+		// pc[2/2] -> pc[1]
+		// byte(2&1) -> byte(0)
+		// pc[2] = pc[1] + byte(0) -> 1 + 0 = 1
+
+		// i = 3のとき
+		// pc[3/2] -> pc[1]
+		// byte(3&1) -> byte(1)
+		// pc[3] = pc[1] + byte(1) -> 1 + 1 = 2
+		pc[i] = pc[i/2] + byte(i&1)
+		//fmt.Fprintf(os.Stdout, "pc[%v]: %v\n", i, pc[i])
 	}
 }
 
