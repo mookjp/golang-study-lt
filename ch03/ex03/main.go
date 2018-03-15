@@ -16,9 +16,6 @@ const (
 
 var sin30, cos30 = math.Sin(angle), math.Cos(angle) // sin(30度), cos(30度)
 
-var minZ float64
-var maxZ float64
-
 func main() {
 	fmt.Printf("<svg xmlns='http://www.w3.org/2000/svg' "+
 		"style='stroke: grey; fill: white; stroke-width: 0.7' "+
@@ -53,7 +50,6 @@ func main() {
 		}
 	}
 	fmt.Println("</svg>")
-	//fmt.Printf("\nminZ:%v, maxZ:%v", minZ, maxZ)
 }
 
 func corner(i, j int) (float64, float64, float64, error) {
@@ -65,12 +61,6 @@ func corner(i, j int) (float64, float64, float64, error) {
 	z := f(x, y)
 	if math.IsNaN(z) {
 		return 0, 0, 0, fmt.Errorf("invalid value was returned from f(x, y). x: %v, y: %v", x, y)
-	}
-	if minZ == 0 || z < minZ {
-		minZ = z
-	}
-	if maxZ == 0 || z > maxZ {
-		maxZ = z
 	}
 
 	// (x, y, z)を 2-D SVGキャンバス(sx, sy)へ等角的に投影
