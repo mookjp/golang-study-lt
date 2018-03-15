@@ -1,4 +1,4 @@
-package popcount
+package ex03
 
 import (
 	"testing"

@@ -1,4 +1,4 @@
-package popcount
+package ex03
 
 // pc[i]はiのポピュレーションカウント
 var pc [256]byte
