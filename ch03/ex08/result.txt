@@ -1,0 +1,10 @@
+[git][* master]:~/go/src/github.com/mookjp/golang-study-lt/ch03/ex08/ go test -bench . -benchmem                 [18-04-11 23:51]
+goos: darwin
+goarch: amd64
+pkg: github.com/mookjp/golang-study-lt/ch03/ex08
+BenchmarkFractalByComplex64-4                300           4159815 ns/op          967097 B/op      19069 allocs/op
+BenchmarkFractalByComplex128-4               300           4067954 ns/op          967099 B/op      19071 allocs/op
+BenchmarkFractalByFloat-4                      5         264155943 ns/op        152796771 B/op   3177834 allocs/op
+BenchmarkFractalByRat-4                        3         458968935 ns/op        416021808 B/op  10670034 allocs/op
+PASS
+ok      github.com/mookjp/golang-study-lt/ch03/ex08     8.562s
