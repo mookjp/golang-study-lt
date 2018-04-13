@@ -11,7 +11,7 @@ import (
 func main() {
 	const (
 		xmin, ymin, xmax, ymax = -2, -2, +2, +2
-		origWidth, origHeight  = 1024, 1024
+		origWidth, origHeight  = 2048, 2048
 		width, height          = origWidth / 2, origHeight / 2
 	)
 
@@ -36,22 +36,22 @@ func main() {
 			subX := x * 2
 			subY := y * 2
 
-			newR := colorMatrix[subX][subY].R +
+			newR := (colorMatrix[subX][subY].R +
 				colorMatrix[subX][subY+1].R +
 				colorMatrix[subX+1][subY].R +
-				colorMatrix[subX+1][subY+1].R/4
-			newG := colorMatrix[subX][subY].R +
-				colorMatrix[subX][subY+1].R +
-				colorMatrix[subX+1][subY].R +
-				colorMatrix[subX+1][subY+1].R/4
-			newB := colorMatrix[subX][subY].R +
-				colorMatrix[subX][subY+1].R +
-				colorMatrix[subX+1][subY].R +
-				colorMatrix[subX+1][subY+1].R/4
-			newA := colorMatrix[subX][subY].R +
-				colorMatrix[subX][subY+1].R +
-				colorMatrix[subX+1][subY].R +
-				colorMatrix[subX+1][subY+1].R/4
+				colorMatrix[subX+1][subY+1].R) / 4
+			newG := (colorMatrix[subX][subY].G +
+				colorMatrix[subX][subY+1].G +
+				colorMatrix[subX+1][subY].G +
+				colorMatrix[subX+1][subY+1].G) / 4
+			newB := (colorMatrix[subX][subY].B +
+				colorMatrix[subX][subY+1].B +
+				colorMatrix[subX+1][subY].B +
+				colorMatrix[subX+1][subY+1].B) / 4
+			newA := (colorMatrix[subX][subY].A +
+				colorMatrix[subX][subY+1].A +
+				colorMatrix[subX+1][subY].A +
+				colorMatrix[subX+1][subY+1].A) / 4
 
 			img.Set(x, y, color.RGBA{newR, newG, newB, newA})
 		}
