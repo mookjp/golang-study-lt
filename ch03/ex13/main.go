@@ -10,14 +10,15 @@ package ex13
 //)
 
 const (
-	KB = 1000
-	MB = 1000 * KB
-	GB = 1000 * MB
-	TB = 1000 * GB
-	PB = 1000 * TB
-	EB = 1000 * PB
-	ZB = 1000 * EB
-	YB = 1000 * ZB
+	_ = 1<<(10*iota) - (3 << iota)
+	KB
+	MB
+	GB
+	TB
+	//PB = 1000 * TB
+	//EB = 1000 * PB
+	//ZB = 1000 * EB
+	//YB = 1000 * ZB
 )
 
 type c struct {
@@ -25,10 +26,10 @@ type c struct {
 	MB uint64
 	GB uint64
 	TB uint64
-	PB uint64
-	EB uint64
-	ZB uint64
-	YB uint64
+	//PB uint64
+	//EB uint64
+	//ZB uint64
+	//YB uint64
 }
 
 func consts() c {
@@ -37,9 +38,9 @@ func consts() c {
 		MB: MB,
 		GB: GB,
 		TB: TB,
-		PB: PB,
-		EB: EB,
-		ZB: ZB,
-		YB: YB,
+		//PB: PB,
+		//EB: EB,
+		//ZB: ZB,
+		//YB: YB,
 	}
 }

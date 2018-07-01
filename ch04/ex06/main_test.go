@@ -15,9 +15,11 @@ func TestMainFunc(t *testing.T) {
 		{[]byte("  "), []byte(" ")},
 		{[]byte("   "), []byte(" ")},
 		{[]byte("    "), []byte(" ")},
+		{[]byte("　"), []byte(" ")},
 		{[]byte(" \r \n  "), []byte(" ")},
 		{[]byte("  abc"), []byte(" abc")},
 		{[]byte("  a  b  c  "), []byte(" a b c ")},
+		{[]byte("  あ  b  c  "), []byte(" あ b c ")},
 	}
 	for _, test := range tests {
 		fmt.Fprintf(os.Stdout, "input: %v, expected: %v\n", test.input, test.expected)

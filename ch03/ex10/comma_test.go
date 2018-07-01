@@ -11,6 +11,8 @@ func TestComma(t *testing.T) {
 		input    string
 		expected string
 	}{
+		{"", ""},
+		{"1", "1"},
 		{"10", "10"},
 		{"100", "100"},
 		{"1000", "1,000"},

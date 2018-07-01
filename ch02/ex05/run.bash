@@ -1,4 +1,4 @@
 #!/bin/bash
 SCRIPT_DIR=$(cd $(dirname $0);pwd)
 
-go test -bench=.
+go test -bench=. -run=Bench.

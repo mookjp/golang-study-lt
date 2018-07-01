@@ -40,6 +40,7 @@ func main() {
 	fmt.Printf("%d issues:\n", result.TotalCount)
 	fmt.Printf("\n===== in a month =====\n")
 	for _, item := range filteredInAMonth {
+		now.After()
 		fmt.Printf("#%-5d %9.9s %.55s %v\n", item.Number, item.User.Login, item.Title, item.CreatedAt)
 	}
 	fmt.Printf("\n===== in an year =====\n")
