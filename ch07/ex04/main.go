@@ -1,4 +1,4 @@
-package main
+package ex04
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ func main() {
 	}
 }
 
-func fromReader(r io.Reader, w io.Writer) {
+func FromReader(r io.Reader, w io.Writer) {
 	doc, err := html.Parse(r)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "findlinks1: %v\n", err)
