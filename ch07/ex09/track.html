@@ -25,20 +25,15 @@
         <th>Year</th>
         <th>Length</th>
     </tr>
+    {{ range . }}
     <tr>
-        <td>aaa</td>
-        <td>aaa</td>
-        <td>aaa</td>
-        <td>aaa</td>
-        <td>aaa</td>
+        <td>{{ .Title }}</td>
+        <td>{{ .Artist }}</td>
+        <td>{{ .Album }}</td>
+        <td>{{ .Year }}</td>
+        <td>{{ .Length }}</td>
     </tr>
-    <tr>
-        <td>aaa</td>
-        <td>aaa</td>
-        <td>aaa</td>
-        <td>aaa</td>
-        <td>aaa</td>
-    </tr>
+    {{ end }}
 </table>
 </body>
 </html>

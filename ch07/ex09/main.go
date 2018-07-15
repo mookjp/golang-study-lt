@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -69,7 +70,10 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	fmt.Fprintf(w, string(page))
+	// render
+	tracksTemplate := template.New("tracks")
+	template.Must(tracksTemplate.Parse(string(page)))
+	tracksTemplate.Execute(w, tracks)
 }
 
 func loadPage(pageName string) ([]byte, error) {
