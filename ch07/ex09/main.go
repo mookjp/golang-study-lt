@@ -6,7 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"sort"
 	"text/tabwriter"
 	"time"
 )
@@ -58,6 +60,11 @@ func (x byArtist) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 // web page
 // =============================================================================
 
+type tempalteValues struct {
+	SortType string
+	Tracks   []*Track
+}
+
 func main() {
 	http.HandleFunc("/", rootHandler)
 	log.Println("Serving on 8080...")
@@ -70,10 +77,27 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
+
+	u, err := url.ParseRequestURI(r.RequestURI)
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+
+	var nextSortType string
+	switch u.Query().Get("sort") {
+	case "artistDesc":
+		sort.Sort(sort.Reverse(byArtist(tracks)))
+		nextSortType = "artistAsc"
+	default:
+		sort.Sort(byArtist(tracks))
+		nextSortType = "artistDesc"
+	}
+
 	// render
 	tracksTemplate := template.New("tracks")
 	template.Must(tracksTemplate.Parse(string(page)))
-	tracksTemplate.Execute(w, tracks)
+	tracksTemplate.Execute(w, tempalteValues{nextSortType, tracks})
 }
 
 func loadPage(pageName string) ([]byte, error) {

@@ -20,12 +20,12 @@
 <table>
     <tr>
         <th>Title</th>
-        <th>Artist</th>
+        <th><a href="?sort={{ .SortType }}">Artist</a></th>
         <th>Album</th>
         <th>Year</th>
         <th>Length</th>
     </tr>
-    {{ range . }}
+    {{ range .Tracks }}
     <tr>
         <td>{{ .Title }}</td>
         <td>{{ .Artist }}</td>
