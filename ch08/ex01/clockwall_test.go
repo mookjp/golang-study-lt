@@ -9,13 +9,13 @@ import (
 func TestParseArgs(t *testing.T) {
 	var tests = []struct {
 		input    []string
-		expected []serverSettings
+		expected []clockSettings
 	}{
 		{[]string{"US/NewYork=localhost:8010"},
-			[]serverSettings{
+			[]clockSettings{
 				{"US/NewYork", "localhost", 8010}}},
 		{[]string{"US/NewYork=localhost:8010", "Asia/Tokyo=localhost:8020"},
-			[]serverSettings{
+			[]clockSettings{
 				{"US/NewYork", "localhost", 8010},
 				{"Asia/Tokyo", "localhost", 8020},
 			},
