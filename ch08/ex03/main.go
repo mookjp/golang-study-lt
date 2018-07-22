@@ -26,6 +26,9 @@ func main() {
 	done := make(chan struct{})
 	go func() {
 		io.Copy(os.Stdout, conn) // NOTE: ignoring errors
+		// 以下の場合に done が出力される
+		// reverb 側を終了させた場合
+		// 標準入力を終了させた場青
 		log.Println("done")
 		done <- struct{}{} // signal the main goroutine
 	}()
