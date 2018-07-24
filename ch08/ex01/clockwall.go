@@ -85,6 +85,7 @@ func connect(setting *clockSettings) {
 	//mustCopy(os.Stdout, conn)
 
 	// これは流れない
+	// io.CopyがReaderがEOFを返すまで終了しないため動かない
 	buf := new(bytes.Buffer)
 	mustCopy(buf, conn)
 	fmt.Println(buf.String())
