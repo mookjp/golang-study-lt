@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -26,7 +25,8 @@ func main() {
 	settings := parseArgs(os.Args[1:])
 	for _, setting := range settings {
 		fmt.Fprintf(os.Stdout, "Got setting: %v\n", setting)
-		connect(&setting)
+		// TODO: goroutineが終わってしまう
+		go connect(&setting)
 	}
 	//for {
 	//	showClock(settings)
@@ -77,18 +77,19 @@ func parseArgs(args []string) []clockSettings {
 
 func connect(setting *clockSettings) {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", setting.address, setting.port))
+	fmt.Fprintln(os.Stdout, "connected to ", setting.address, setting.port)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
 	// これは標準出力に流れる
-	//mustCopy(os.Stdout, conn)
+	mustCopy(os.Stdout, conn)
 
 	// これは流れない
 	// io.CopyがReaderがEOFを返すまで終了しないため動かない
-	buf := new(bytes.Buffer)
-	mustCopy(buf, conn)
-	fmt.Println(buf.String())
+	//buf := new(bytes.Buffer)
+	//mustCopy(buf, conn)
+	//fmt.Println(buf.String())
 }
 
 func mustCopy(dst io.Writer, src io.Reader) {
