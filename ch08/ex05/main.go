@@ -13,7 +13,14 @@ import (
 	"image/png"
 	"math/cmplx"
 	"os"
+	"sync"
 )
+
+type imgParams struct {
+	px    int
+	py    int
+	color color.Color
+}
 
 func main() {
 	const (
@@ -22,16 +29,39 @@ func main() {
 	)
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	//paramChan := make(chan imgParams, 100)
+
+	var wg sync.WaitGroup
+	ch := make(chan imgParams, 10)
 	for py := 0; py < height; py++ {
 		y := float64(py)/height*(ymax-ymin) + ymin
 		for px := 0; px < width; px++ {
+
+			//go func() {
 			x := float64(px)/width*(xmax-xmin) + xmin
 			z := complex(x, y)
+			go func() {
+				wg.Add(1)
+				ch <- imgParams{px, py, mandelbrot(z)}
+			}()
+			//color := <-ch
+			//color := mandelbrot(z)
+			//paramChan <- imgParams{px, py, color}
 			// Image point (px, py) represents complex value z.
-			img.Set(px, py, mandelbrot(z))
+			//img.Set(px, py, color)
+			//}()
 		}
 	}
-	png.Encode(os.Stdout, img) // NOTE: ignoring errors
+	go func() {
+		params := <-ch
+		img.Set(params.px, params.py, params.color)
+		wg.Done()
+	}()
+	go func() {
+		wg.Wait()
+		png.Encode(os.Stdout, img) // NOTE: ignoring errors
+	}()
 }
 
 func mandelbrot(z complex128) color.Color {
