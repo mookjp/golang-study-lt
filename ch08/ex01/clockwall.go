@@ -26,6 +26,7 @@ func main() {
 	settings := parseArgs(os.Args[1:])
 	for _, setting := range settings {
 		fmt.Fprintf(os.Stdout, "Got setting: %v\n", setting)
+		// TODO: sync.WaitGroup
 		connect(&setting)
 	}
 	//for {
