@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"log"
+		"log"
 	"net"
 	"os"
 	"regexp"
 	"strconv"
-	"text/tabwriter"
+			"bufio"
 )
 
 type clockSettings struct {
@@ -23,41 +22,30 @@ func main() {
 		fmt.Println("You should specify server settings e.g. Asia/Tokyo=localhost:8010")
 	}
 	settings := parseArgs(os.Args[1:])
+	timechan := make(chan string)
 	for _, setting := range settings {
 		fmt.Fprintf(os.Stdout, "Got setting: %v\n", setting)
 		// TODO: sync.WaitGroup
-		connect(&setting)
+		go connect(setting, timechan)
 	}
-	//for {
-	//	showClock(settings)
-	//	time.Sleep(1 * time.Second)
-	//}
+	for {
+		count := 1
+		show(timechan, &count, len(settings))
+	}
 }
 
-func showClock(settings []clockSettings) {
-	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 8, 8, 2, '\t', 0)
-	// Timezone
-	for i, setting := range settings {
-		if i != len(settings)-1 {
-			fmt.Fprintf(w, "%s\t", setting.timezone)
-		} else {
-			fmt.Fprintf(w, "%s", setting.timezone)
-		}
+func show(timechan <-chan string, count *int, maxNum int) {
+	time := <-timechan
+	if (*count < maxNum) {
+		fmt.Printf("%s ", time)
+		fmt.Printf("(maxNum: %v, count: %v) ", maxNum, *count)
+		*count = *count + 1
+		fmt.Printf("(*count: %v)", *count)
+	} else {
+		fmt.Printf("%s\n", time)
+		*count = 1
 	}
-	// Time
-	for i, setting := range settings {
-		if i != len(settings)-1 {
-			fmt.Fprintf(w, "%s\t", setting.time)
-		} else {
-			fmt.Fprintf(w, "%s", setting.time)
-		}
-	}
-	fmt.Fprintln(w)
-	w.Flush()
 }
-
-// TODO: クライアントは受け取ったら時間を保持する
 
 func parseArgs(args []string) []clockSettings {
 	re, _ := regexp.Compile("(.+?)=(.+?):(\\d+)")
@@ -75,25 +63,21 @@ func parseArgs(args []string) []clockSettings {
 	return settings
 }
 
-func connect(setting *clockSettings) {
+func connect(setting clockSettings, timechan chan<- string) {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", setting.address, setting.port))
 	fmt.Fprintln(os.Stdout, "connected to ", setting.address, setting.port)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-	// これは標準出力に流れる
-	mustCopy(os.Stdout, conn)
 
-	// これは流れない
-	// io.CopyがReaderがEOFを返すまで終了しないため動かない
-	//buf := new(bytes.Buffer)
-	//mustCopy(buf, conn)
-	//fmt.Println(buf.String())
-}
-
-func mustCopy(dst io.Writer, src io.Reader) {
-	if _, err := io.Copy(dst, src); err != nil {
-		log.Fatal(err)
+	reader := bufio.NewReader(conn)
+	for {
+		line, _, err := reader.ReadLine()
+		if err != nil {
+			fmt.Fprintf(os.Stdout, "error: %v", err)
+		}
+		//fmt.Println(string(line))
+		timechan <- string(line)
 	}
 }
