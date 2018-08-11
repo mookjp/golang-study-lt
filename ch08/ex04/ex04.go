@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func echo(c net.Conn, shout string, delay time.Duration) {
+func echo(c net.TCPConn, shout string, delay time.Duration) {
 	fmt.Fprintln(c, "\t", strings.ToUpper(shout))
 	time.Sleep(delay)
 	fmt.Fprintln(c, "\t", shout)
