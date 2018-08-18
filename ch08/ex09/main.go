@@ -22,47 +22,53 @@ func main() {
 		roots = []string{"."}
 	}
 
-	fileSizes := make(chan int64)
-	var n sync.WaitGroup
 	for _, root := range roots {
+		// root ごとの root, fileSize chan, sync.WaitGroup を作成
+		fileSize := make(chan int64)
+		var n sync.WaitGroup
 		n.Add(1)
-		go walkDir(root, &n, fileSizes)
-	}
-	go func() {
-		// walkDirの処理が全て完了するのを待ってから fileSizes をクローズする
-		n.Wait()
-		close(fileSizes)
-	}()
+		// walkDir の実行
+		go walkDir(root, &n, fileSize)
+		// root ごとの 終了監視
+		go func() {
+			n.Wait()
+			close(fileSize)
+		}()
 
-	// fileSizes の結果を定期的に表示する
-	var tick <-chan time.Time
-	if *vFlag {
-		tick = time.Tick(500 * time.Millisecond)
-	}
-	var nfiles, nbytes int64
-loop:
-	for {
-		select {
-		// fileSizesからサイズを取得する
-		case size, ok := <-fileSizes:
-			// channel が閉じられていたらループを終了する
-			if !ok {
-				break loop
+		// fileSize
+		go func() {
+			var tick <-chan time.Time
+			if *vFlag {
+				tick = time.Tick(500 * time.Millisecond)
 			}
-			nfiles++
-			nbytes += size
-			// 500ms ごとに サイズを表示する
-		case <-tick:
-			printDiskUsage(nfiles, nbytes)
-		}
+			var nfiles, nbytes int64
+		loop:
+			for {
+				select {
+				// fileSizesからサイズを取得する
+				case size, ok := <-fileSize:
+					// channel が閉じられていたらループを終了する
+					if !ok {
+						break loop
+					}
+					nfiles++
+					nbytes += size
+					// 500ms ごとに サイズを表示する
+				case <-tick:
+					printDiskUsageForRoot(root, nfiles, nbytes)
+				}
+			}
+			// 最終的なディスク利用量を表示する
+			printDiskUsageForRoot(root, nfiles, nbytes)
+		}()
 	}
-
-	// 最終的なディスク利用量を表示する
-	printDiskUsage(nfiles, nbytes)
 }
 
 func printDiskUsage(nfiles, nbytes int64) {
 	fmt.Printf("%d files %d bytes\n", nfiles, nbytes)
+}
+func printDiskUsageForRoot(root string, nfiles, nbytes int64) {
+	fmt.Printf("root %s: %d files %d bytes\n", root, nfiles, nbytes)
 }
 
 func walkDir(dir string, n *sync.WaitGroup, fileSizes chan<- int64) {
