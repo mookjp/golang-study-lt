@@ -12,6 +12,17 @@ import (
 
 var vFlag = flag.Bool("v", false, "show verbose progress messages")
 
+type rootInfo struct {
+	root   string
+	nfiles int64
+	nbytes int64
+}
+
+type fileInfo struct {
+	root string
+	size int64
+}
+
 func main() {
 
 	// 対象ディレクトリ名取得
@@ -22,45 +33,51 @@ func main() {
 		roots = []string{"."}
 	}
 
+	rootMap := make(map[string]*rootInfo)
+	fileSizeChan := make(chan fileInfo)
+	var n sync.WaitGroup
 	for _, root := range roots {
-		// root ごとの root, fileSize chan, sync.WaitGroup を作成
-		fileSize := make(chan int64)
-		var n sync.WaitGroup
+		info := rootInfo{root, 0, 0}
 		n.Add(1)
 		// walkDir の実行
-		go walkDir(root, &n, fileSize)
-		// root ごとの 終了監視
+		go walkDir(root, root, &n, fileSizeChan)
 		go func() {
 			n.Wait()
-			close(fileSize)
+			// TODO: panic: close of closed channel が発生する
+			close(fileSizeChan)
 		}()
+		// マップに追加
+		rootMap[root] = &info
+	}
 
-		// fileSize
-		go func() {
-			var tick <-chan time.Time
-			if *vFlag {
-				tick = time.Tick(500 * time.Millisecond)
+	// size
+	var tick <-chan time.Time
+	if *vFlag {
+		tick = time.Tick(500 * time.Millisecond)
+	}
+	//var nfiles, nbytes int64
+loop:
+	for {
+		select {
+		// fileSizesからサイズを取得する
+		case fileInfo, ok := <-fileSizeChan:
+			// channel が閉じられていたらループを終了する
+			if !ok {
+				break loop
 			}
-			var nfiles, nbytes int64
-		loop:
-			for {
-				select {
-				// fileSizesからサイズを取得する
-				case size, ok := <-fileSize:
-					// channel が閉じられていたらループを終了する
-					if !ok {
-						break loop
-					}
-					nfiles++
-					nbytes += size
-					// 500ms ごとに サイズを表示する
-				case <-tick:
-					printDiskUsageForRoot(root, nfiles, nbytes)
-				}
+			rootMap[fileInfo.root].nfiles = rootMap[fileInfo.root].nfiles + 1
+			rootMap[fileInfo.root].nbytes = rootMap[fileInfo.root].nbytes + fileInfo.size
+			fmt.Fprintf(os.Stdout, "verbose - %s: nfliles: %d, nbytes: %d\n", fileInfo.root, rootMap[fileInfo.root].nfiles, rootMap[fileInfo.root].nbytes)
+		//500ms ごとに サイズを表示する
+		case <-tick:
+			for _, rootInfo := range rootMap {
+				printDiskUsageForRoot(rootInfo.root, rootInfo.nfiles, rootInfo.nbytes)
 			}
-			// 最終的なディスク利用量を表示する
-			printDiskUsageForRoot(root, nfiles, nbytes)
-		}()
+		}
+	}
+	for _, set := range rootMap {
+		// 最終的なディスク利用量を表示する
+		printDiskUsageForRoot(set.root, set.nfiles, set.nbytes)
 	}
 }
 
@@ -71,7 +88,7 @@ func printDiskUsageForRoot(root string, nfiles, nbytes int64) {
 	fmt.Printf("root %s: %d files %d bytes\n", root, nfiles, nbytes)
 }
 
-func walkDir(dir string, n *sync.WaitGroup, fileSizes chan<- int64) {
+func walkDir(root, dir string, n *sync.WaitGroup, fileSizes chan<- fileInfo) {
 	defer n.Done()
 
 	for _, entry := range dirents(dir) {
@@ -80,10 +97,10 @@ func walkDir(dir string, n *sync.WaitGroup, fileSizes chan<- int64) {
 		if entry.IsDir() {
 			n.Add(1)
 			subdir := filepath.Join(dir, entry.Name())
-			go walkDir(subdir, n, fileSizes)
+			go walkDir(root, subdir, n, fileSizes)
 			// ファイルの場合はサイズをfileSizesに送信する
 		} else {
-			fileSizes <- entry.Size()
+			fileSizes <- fileInfo{root, entry.Size()}
 		}
 
 	}
