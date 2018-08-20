@@ -80,6 +80,9 @@ func main() {
 		worklist <- os.Args[1:]
 	}()
 
+	// TODO: 中止を監視する goroutine を追加
+	// TODO:
+
 	for i := 0; i < 20; i++ {
 		go func() {
 			// unseenLinks から crawl へ link を渡す
