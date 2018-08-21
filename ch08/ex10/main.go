@@ -10,8 +10,15 @@ import (
 	"golang.org/x/net/html"
 )
 
-func extract(url string) ([]string, error) {
-	resp, err := http.Get(url)
+func extract(url string, done chan struct{}) ([]string, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Cancel = done
+
+	resp, err := http.DefaultClient.Do(req)
+	//resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -62,9 +69,9 @@ func forEachNode(n *html.Node, pre, post func(n *html.Node)) {
 	}
 }
 
-func crawl(url string) []string {
+func crawl(url string, done chan struct{}) []string {
 	fmt.Println(url)
-	list, err := extract(url)
+	list, err := extract(url, done)
 	if err != nil {
 		log.Println(err)
 	}
@@ -75,20 +82,26 @@ func main() {
 	worklist := make(chan []string)
 	unseenLinks := make(chan string)
 
+	// 中止を監視して通知するためのチャンネル
+	done := make(chan struct{})
+
+	// 入力されたら done をクローズする
+	go func() {
+		os.Stdin.Read(make([]byte, 1))
+		close(done)
+	}()
+
 	// 引数を worklist へ送信
 	go func() {
 		worklist <- os.Args[1:]
 	}()
-
-	// TODO: 中止を監視する goroutine を追加
-	// TODO:
 
 	for i := 0; i < 20; i++ {
 		go func() {
 			// unseenLinks から crawl へ link を渡す
 			// crawl した link を worklink 送信
 			for link := range unseenLinks {
-				foundlinks := crawl(link)
+				foundlinks := crawl(link, done)
 				go func() {
 					worklist <- foundlinks
 				}()
