@@ -123,13 +123,15 @@ func parse(node *html.Node, urlBase string) {
 	parse(node.FirstChild, urlBase)
 }
 
+// in, err := html.Parse(bufio.NewReader(res))
+// html.Render(writer, in)
 // TODO: すぐに保存されない
 func save(res *http.Response, path string) {
 	f, err := os.Create(path)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "creating path %s was failed\n", path)
 	}
-	io.Copy(f, res.Body)
 	defer f.Close()
 	defer res.Body.Close()
+	io.Copy(f, res.Body)
 }
