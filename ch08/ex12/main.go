@@ -9,14 +9,20 @@ import (
 
 type client chan<- string
 
+type clientInfo struct {
+	c    client
+	name string
+}
+
 var (
-	entering = make(chan client)
-	leaving  = make(chan client)
+	entering = make(chan clientInfo)
+	leaving  = make(chan clientInfo)
 	messages = make(chan string) // すべてのクライアントから送信されるメッセージ
 )
 
 func broadcaster() {
-	clients := make(map[client]bool)
+	// クライアントのチャンネルと名前
+	clients := make(map[client]string)
 	for {
 		select {
 		// メッセージがきたら client チャンネルに送信する
@@ -25,13 +31,18 @@ func broadcaster() {
 				cli <- msg
 			}
 		// entering に クライアントがきたらマップに追加する
-		case cli := <-entering:
-			clients[cli] = true
+		case info := <-entering:
+			clients[info.c] = info.name
+			// 現在のクライアントリストを送信
+			info.c <- "current clients:\n"
+			for _, name := range clients {
+				info.c <- name + "\n"
+			}
 		// leaving に クライアントがきたらマップから削除する
 		// クライアントチャンネルをクローズする
-		case cli := <-leaving:
-			delete(clients, cli)
-			close(cli)
+		case info := <-leaving:
+			delete(clients, info.c)
+			close(info.c)
 		}
 	}
 }
@@ -50,9 +61,10 @@ func handleConn(conn net.Conn) {
 	go clientWriter(conn, ch)
 
 	who := conn.RemoteAddr().String()
+	info := clientInfo{ch, who}
 	ch <- "You are " + who + "\n"
 	messages <- who + " has arrived\n"
-	entering <- ch
+	entering <- info
 
 	// 1行ごとにconnから読み込み
 	input := bufio.NewScanner(conn)
@@ -61,7 +73,7 @@ func handleConn(conn net.Conn) {
 		messages <- who + ": " + input.Text() + "\n"
 	}
 
-	leaving <- ch
+	leaving <- info
 	messages <- who + "has left\n"
 	conn.Close()
 }
