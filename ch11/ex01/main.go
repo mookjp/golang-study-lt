@@ -44,7 +44,7 @@ func charCount(reader io.Reader, writer io.Writer, errWriter io.Writer) {
 		counts[r]++
 		utflen[n]++
 	}
-	fmt.Printf("rune\tcount\n")
+	fmt.Fprintf(writer, "rune\tcount\n")
 	for c, n := range counts {
 		fmt.Fprintf(writer, "%q\t%d\n", c, n)
 	}
