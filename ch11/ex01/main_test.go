@@ -9,6 +9,9 @@ import (
 	"testing"
 )
 
+// TODO: mapの値の存在有無は
+// if val, ok := dict["foo"]; ok {
+// のようにして書き直す
 func TestNorMalScenario(t *testing.T) {
 	var tests = []struct {
 		input                string
