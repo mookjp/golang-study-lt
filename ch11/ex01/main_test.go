@@ -5,20 +5,30 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 )
 
+type pair struct {
+	key   string
+	value string
+}
+
 func TestNorMalScenario(t *testing.T) {
 	var tests = []struct {
 		input                string
-		expectedCharCount    map[string]int
-		expectedUnicodeCount map[int]int
+		expectedCharCount    map[string]string
+		expectedUnicodeCount map[string]string
 	}{
-		{"abc", map[string]int{"a": 1, "b": 1, "c": 1}, map[int]int{1: 3, 2: 0, 3: 0, 4: 0}},
-		{"ああいううえおおお", map[string]int{"あ": 2, "い": 1, "う": 2, "え": 1, "お": 3}, map[int]int{1: 0, 2: 0, 3: 9, 4: 0}},
-		{"", map[string]int{}, map[int]int{1: 0, 2: 0, 3: 0, 4: 0}},
+		{"abc",
+			map[string]string{"'a'": "1", "'b'": "1", "'c'": "1"},
+			map[string]string{"1": "3", "2": "0", "3": "0", "4": "0"}},
+		{"ああいううえおおお",
+			map[string]string{"'あ'": "2", "'い'": "1", "'う'": "2", "'え'": "1", "'お'": "3"},
+			map[string]string{"1": "0", "2": "0", "3": "9", "4": "0"}},
+		{"",
+			map[string]string{},
+			map[string]string{"1": "0", "2": "0", "3": "0", "4": "0"}},
 	}
 	for _, test := range tests {
 		fmt.Fprintf(os.Stdout, "input: %v, expectedCharCount: %v, expectedUnicodeCount: %v\n",
@@ -31,30 +41,61 @@ func TestNorMalScenario(t *testing.T) {
 		// Execution
 		charCount(reader, writer, errWriter)
 
-		// "rune	count" ヘッダの検証
-		scanCounter := 0
 		headerScanner := bufio.NewScanner(writer)
+
+		// "rune	count" ヘッダの検証
+		if headerScanner.Scan() {
+			if headerScanner.Text() != "rune\tcount" {
+				t.Errorf("it doesnt show expected header")
+			}
+		} else {
+			t.Errorf("it doesnt show expected header")
+		}
+
+		// rune, count の値
 		for headerScanner.Scan() {
 			line := headerScanner.Text()
-			if scanCounter == 0 {
-				if line != "rune\tcount" {
-					t.Errorf("header line was incorrect")
-				}
-				scanCounter++
-				continue
-			}
-			// rune, countの表示
-			for charKey, charCount := range test.expectedCharCount {
-				if line != "'"+charKey+"'\t"+strconv.Itoa(charCount) {
-					t.Errorf("charKey was %v", charKey)
-				}
-			}
-			// TODO: len, countの表示
 			if line == "" {
-				for headerScanner.Scan() {
-
-				}
+				break
 			}
+			splitted := strings.Split(line, "\t")
+			charVal := test.expectedCharCount[splitted[0]]
+			if charVal == "" {
+				t.Errorf("target char was not in returns. target line: %s", line)
+			}
+			if line != fmt.Sprintf("%s\t%s", splitted[0], charVal) {
+				t.Errorf("charPair was '%v\t%v', actual was %v", splitted[0], charVal, line)
+			}
+			delete(test.expectedCharCount, splitted[0])
+		}
+		if len(test.expectedCharCount) != 0 {
+			t.Errorf("actual lines are not enough")
+		}
+
+		// validate len count header
+		if headerScanner.Scan() {
+			header := headerScanner.Text()
+			if header != "len\tcount" {
+				t.Errorf("it doesnt show expected header: %s, actual: %s", "len\tcount", header)
+			}
+		} else {
+			t.Errorf("it doesnt show expected header")
+		}
+		// len count
+		for headerScanner.Scan() {
+			line := headerScanner.Text()
+			splitted := strings.Split(line, "\t")
+			charVal := test.expectedUnicodeCount[splitted[0]]
+			if charVal == "" {
+				t.Errorf("target char was not in returns. target line: %s", line)
+			}
+			if line != fmt.Sprintf("%s\t%s", splitted[0], charVal) {
+				t.Errorf("charPair was '%v\t%v', actual was %v", splitted[0], charVal, line)
+			}
+			delete(test.expectedUnicodeCount, splitted[0])
+		}
+		if len(test.expectedUnicodeCount) != 0 {
+			t.Errorf("actual lines are not enough")
 		}
 	}
 }
