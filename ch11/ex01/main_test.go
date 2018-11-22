@@ -9,11 +9,6 @@ import (
 	"testing"
 )
 
-type pair struct {
-	key   string
-	value string
-}
-
 func TestNorMalScenario(t *testing.T) {
 	var tests = []struct {
 		input                string
