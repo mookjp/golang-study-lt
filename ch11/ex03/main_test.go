@@ -28,12 +28,13 @@ func randomPalindrome(rng *rand.Rand) string {
 
 // TODO: 正しくUnicode文字列を順番に作成する方法を調べる
 func randomStr(rng *rand.Rand) string {
-	n := rng.Intn(25) // 24までのランダムな数字
+	n := rng.Intn(25) + 1 // 24までのランダムな数字 + 1
 	runes := make([]rune, n)
-	start := rng.Intn(0x1000)
 
+	// unicode の順に文字を入れていく
 	for i := 0; i < n; i++ {
-		runes[i] = rune(start + i)
+		r := rune(rng.Intn(0x1000)) // '\u0999' までのランダムなルーン
+		runes[i] = r
 	}
 	return string(runes)
 }
