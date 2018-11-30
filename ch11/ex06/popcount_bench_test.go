@@ -1,10 +1,10 @@
-package ex05
+package ex06
 
 import "testing"
 import (
-	"../popcount"
 	"github.com/mookjp/golang-study-lt/ch02/ex03"
 	"github.com/mookjp/golang-study-lt/ch02/ex04"
+	"gopl.io/ch2/popcount"
 )
 
 var output int

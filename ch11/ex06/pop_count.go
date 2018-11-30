@@ -1,4 +1,4 @@
-package ex05
+package ex06
 
 // PopCount は xのポピュレーションカウント（1が設定されているビット数）を返します
 func PopCount(x uint64) int {
